@@ -1,11 +1,14 @@
 package apiMonitering.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Getter
@@ -25,6 +28,9 @@ public class ApiResponse {
     private String body;
 
     private String errorMessage;
+
+    @JsonProperty("cmmMsgHeader")
+    private String cmmMsgHeader;
 
     @JsonIgnore
     @JoinColumn(name = "apiendpoint_id")
