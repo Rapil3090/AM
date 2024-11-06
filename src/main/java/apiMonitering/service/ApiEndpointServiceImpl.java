@@ -7,11 +7,14 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.DefaultUriBuilderFactory;
 import reactor.core.publisher.Mono;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,38 +24,35 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     private final ApiEndpointRepository apiEndpointRepository;
 
 
-    public Mono<ApiResponse> getApi() {
+    public Mono<String> getApi(Model model) {
 
-        WebClient webClient = WebClient.create();
+        String baseUrl = "http://apis.data.go.kr/B551210/supplyEstiValueList/getSupplyEstiValueList";
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(baseUrl);
+        factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
-        String decodeServiceKey = URLDecoder.decode("\t\n" +
-                "R3fWxDee7P9ysC5ty+6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw==", StandardCharsets.UTF_8);
+        WebClient webClient = WebClient.builder()
+                .uriBuilderFactory(factory)
+                .baseUrl(baseUrl)
+                .build();
+
+        String serviceKey = "R3fWxDee7P9ysC5ty+6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw==";
+//        String baseUrl = "apis.data.go.kr/B551210/supplyEstiValueList";
+        String endPoint = "/getSupplyEstiValueList";
+        String openYr = "2022";
 
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .scheme("http")
-                        .host("apis.data.go.kr")
-                        .path("/1371033/mmcadensity/congestion")
-                        .queryParam("serviceKey", decodeServiceKey)
-                        .queryParam("spaceCode", "MMCA-SPACE-1001")
+                        .queryParam("serviceKey", serviceKey)
+                        .queryParam("openYr", openYr)
                         .build())
                 .retrieve()
                 .bodyToMono(String.class)
-                .map(xml -> {
-                    try {
-                        XmlMapper xmlMapper = new XmlMapper();
-                        return xmlMapper.readValue(xml, ApiResponse.class);
-                    } catch (Exception e) {
-                        throw new RuntimeException("실패", e);
-                    }
-                });
+                        .map(response -> {
+                            model.addAttribute("response", response);
+                            return "test/test";
+                        });
     }
 
-    public void callApiAndPrintResponse() {
-        getApi().subscribe(
-                apiResponse -> System.out.println("응답 데이터: " + apiResponse)
 
-        );
-    }
 
 }
