@@ -33,8 +33,12 @@ dependencies {
 	implementation 'org.postgresql:postgresql'
 	implementation 'org.springframework.boot:spring-boot-starter'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+//	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+
+
 }
 
 tasks.named('test') {
