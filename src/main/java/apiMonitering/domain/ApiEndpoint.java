@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @AllArgsConstructor
 @Entity
 @Getter
@@ -20,17 +22,15 @@ public class ApiEndpoint {
 
     private String url;
 
-    private String authKey;
+    private String serviceKey;
 
-    private String method;
-
-    private String header;
-
-    private String payload;
+    private String param;
 
     private int scheduledTime;
 
     private String status;
+
+    private LocalDateTime startTime;
 
     @JsonIgnore
     @JoinColumn(name = "users_id")
