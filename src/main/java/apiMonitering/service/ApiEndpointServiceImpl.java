@@ -1,8 +1,11 @@
 package apiMonitering.service;
 
+import apiMonitering.DTO.ApiEndpointDTO.RequestApiEndpointDTO;
 import apiMonitering.domain.ApiEndpoint;
 import apiMonitering.domain.ApiResponse;
+import apiMonitering.exception.ApiEndPointException;
 import apiMonitering.repository.ApiEndpointRepository;
+import apiMonitering.type.ErrorCode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,28 +29,35 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     private final ApiEndpointRepository apiEndpointRepository;
 
 
-    public Mono<String> getApi() throws URISyntaxException {
+    public Mono<String> getApi() {
 
-        String baseUrl = "http://apis.data.go.kr/B551210/supplyEstiValueList/getSupplyEstiValueList";
-        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(baseUrl);
+
+
+//        String baseUrl = "http://apis.data.go.kr/B551210/supplyEstiValueList/getSupplyEstiValueList";
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(request.getUrl());
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
         WebClient webClient = WebClient.builder()
                 .uriBuilderFactory(factory)
-                .baseUrl(baseUrl)
+                .baseUrl(request.getUrl())
                 .build();
 
-//        String serviceKey = "R3fWxDee7P9ysC5ty+6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw==";
-        String serviceKey = "R3fWxDee7P9ysC5ty%2B6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw%3D%3D";
-//        String baseUrl = "apis.data.go.kr/B551210/supplyEstiValueList";
-        String endPoint = "/getSupplyEstiValueList";
-        String openYr = "2022";
-        URI uri = new URI(serviceKey);
+//        String serviceKey = "R3fWxDee7P9ysC5ty%2B6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw%3D%3D";
+//        String openYr = "2022";
+
+        URI encodedServiceKey;
+
+        try {
+            encodedServiceKey = new URI(request.getServiceKey());
+        } catch (URISyntaxException e) {
+            throw new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY);
+        }
+
 
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .queryParam("serviceKey", uri)
-                        .queryParam("openYr", openYr)
+                        .queryParam("serviceKey", encodedServiceKey)
+                        .queryParam("openYr", request.getParam())
                         .build())
                 .retrieve()
                 .bodyToMono(String.class);
