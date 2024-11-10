@@ -1,4 +1,4 @@
-package apiMonitering.DTO.error;
+package apiMonitering.dto.error;
 
 import apiMonitering.type.ErrorCode;
 import lombok.*;

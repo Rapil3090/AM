@@ -2,16 +2,16 @@ package apiMonitering.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Getter
 @Setter
+@Builder
 @Table(name = "apiendpoint")
 public class ApiEndpoint {
 
@@ -24,7 +24,9 @@ public class ApiEndpoint {
 
     private String serviceKey;
 
-    private String param;
+    private String parameters;
+
+    private String query;
 
     private int scheduledTime;
 

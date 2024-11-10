@@ -1,25 +1,21 @@
 package apiMonitering.service;
 
-import apiMonitering.DTO.ApiEndpointDTO.RequestApiEndpointDTO;
+import apiMonitering.dto.apiEndpointDTO.RequestApiEndpointDTO;
 import apiMonitering.domain.ApiEndpoint;
-import apiMonitering.domain.ApiResponse;
 import apiMonitering.exception.ApiEndPointException;
 import apiMonitering.repository.ApiEndpointRepository;
 import apiMonitering.type.ErrorCode;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.ui.Model;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,17 +25,29 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     private final ApiEndpointRepository apiEndpointRepository;
 
 
-    public Mono<String> getApi() {
+    public Flux<String> fetchAndProcessApiData() {
 
+        List<ApiEndpoint> endPoints = apiEndpointRepository.findAll();
 
+        return Flux.fromIterable(endPoints)
+                .flatMap(endPoint ->
+                        getApi((ApiEndpoint) endPoints)
+                                .doOnNext(response -> System.out.println("API 응답:" + response))
+                                .doOnError(error -> System.out.println("API 호출 오류:" + error.getMessage())));
+    }
 
-//        String baseUrl = "http://apis.data.go.kr/B551210/supplyEstiValueList/getSupplyEstiValueList";
-        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(request.getUrl());
+    public Mono<String> getApi(ApiEndpoint request) {
+
+        ApiEndpoint apiEndpoint = apiEndpointRepository.findById(5L)
+                .orElseThrow(() -> new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY));
+
+        //        String baseUrl = "http://apis.data.go.kr/B551210/supplyEstiValueList/getSupplyEstiValueList";
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiEndpoint.getUrl());
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
         WebClient webClient = WebClient.builder()
                 .uriBuilderFactory(factory)
-                .baseUrl(request.getUrl())
+                .baseUrl(apiEndpoint.getUrl())
                 .build();
 
 //        String serviceKey = "R3fWxDee7P9ysC5ty%2B6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw%3D%3D";
@@ -48,7 +56,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
         URI encodedServiceKey;
 
         try {
-            encodedServiceKey = new URI(request.getServiceKey());
+            encodedServiceKey = new URI(apiEndpoint.getServiceKey());
         } catch (URISyntaxException e) {
             throw new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY);
         }
@@ -57,12 +65,49 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .queryParam("serviceKey", encodedServiceKey)
-                        .queryParam("openYr", request.getParam())
+                        .queryParam("openYr", apiEndpoint.getQuery())
                         .build())
                 .retrieve()
                 .bodyToMono(String.class);
     }
 
 
+    public Mono<String> getApi2() throws URISyntaxException {
 
+        String baseUrl = "http://apis.data.go.kr/B551210/supplyValuePerformanceList/getSupplyValuePerformanceList";
+//        String serviceKey = "R3fWxDee7P9ysC5ty+6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw==";
+        String serviceKey = "R3fWxDee7P9ysC5ty%2B6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw%3D%3D";
+
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(baseUrl);
+        factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
+
+        WebClient webClient = WebClient.builder()
+                .uriBuilderFactory(factory)
+                .baseUrl(baseUrl)
+                .build();
+
+        URI uri = new URI(serviceKey);
+
+        Mono jxh = webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .queryParam("serviceKey", uri)
+                        .queryParam("openYr", 2023)
+                        .queryParam("openMm", "05")
+                        .build())
+                .retrieve()
+                .bodyToMono(String.class);
+        System.out.println("mono" + jxh.map((ss) -> ss.toString().toString()));
+        return jxh;
+
+    }
+
+
+    public ApiEndpoint createApi(RequestApiEndpointDTO.Request request) {
+
+        return apiEndpointRepository.save(ApiEndpoint.builder()
+                .url(request.getUrl())
+                        .serviceKey(request.getServiceKey())
+                        .query(request.getParam())
+                .build());
+    }
 }

@@ -1,4 +1,4 @@
-package apiMonitering.DTO.ApiEndpointDTO;
+package apiMonitering.dto.apiEndpointDTO;
 
 import lombok.*;
 
