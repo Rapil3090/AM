@@ -19,9 +19,7 @@ public class CreateApiEndpointDTO {
 
         private String serviceKey;
 
-        private List<String> param;
-
-        private List<String> param2;
+        private List<List<String>> param;
 
         private String status;
 

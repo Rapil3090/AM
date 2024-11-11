@@ -27,7 +27,7 @@ public class ApiEndpoint {
 
     private String serviceKey;
 
-    private List<String> parameters;
+//    private List<List<String>> parameters;
 
     @Convert(converter = MapToJsonConverter.class)
     private Map<String, String> query;
