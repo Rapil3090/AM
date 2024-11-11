@@ -1,15 +1,20 @@
 package apiMonitering.domain;
 
+import apiMonitering.type.MapToJsonConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Getter
 @Setter
+@Builder
 @Table(name = "apiendpoint")
 public class ApiEndpoint {
 
@@ -20,17 +25,18 @@ public class ApiEndpoint {
 
     private String url;
 
-    private String authKey;
+    private String serviceKey;
 
-    private String method;
+    private List<String> parameters;
 
-    private String header;
-
-    private String payload;
+    @Convert(converter = MapToJsonConverter.class)
+    private Map<String, String> query;
 
     private int scheduledTime;
 
     private String status;
+
+    private LocalDateTime startTime;
 
     @JsonIgnore
     @JoinColumn(name = "users_id")
