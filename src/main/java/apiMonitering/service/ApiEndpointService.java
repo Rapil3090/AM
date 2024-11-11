@@ -1,6 +1,6 @@
 package apiMonitering.service;
 
-import apiMonitering.dto.apiEndpointDTO.RequestApiEndpointDTO;
+import apiMonitering.dto.create.CreateApiEndpointDTO;
 import apiMonitering.domain.ApiEndpoint;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -15,5 +15,5 @@ public interface ApiEndpointService {
 
     Flux<String> fetchAndProcessApiData();
 
-    ApiEndpoint createApi(RequestApiEndpointDTO.Request request);
+    ApiEndpoint createApi(CreateApiEndpointDTO.Request request);
 }

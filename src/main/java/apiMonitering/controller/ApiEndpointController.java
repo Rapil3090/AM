@@ -1,6 +1,6 @@
 package apiMonitering.controller;
 
-import apiMonitering.dto.apiEndpointDTO.RequestApiEndpointDTO;
+import apiMonitering.dto.create.CreateApiEndpointDTO;
 import apiMonitering.domain.ApiEndpoint;
 import apiMonitering.service.ApiEndpointService;
 import jakarta.validation.Valid;
@@ -36,7 +36,7 @@ public class ApiEndpointController {
 
     @PostMapping("/save")
     public ResponseEntity<ApiEndpoint> saveApiEndpoint(
-            @Valid @RequestBody RequestApiEndpointDTO.Request request) {
+            @Valid @RequestBody CreateApiEndpointDTO.Request request) {
 
         return ResponseEntity.ok(apiEndpointService.createApi(request));
     }

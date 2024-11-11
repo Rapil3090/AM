@@ -1,10 +1,12 @@
-package apiMonitering.dto.apiEndpointDTO;
+package apiMonitering.dto.create;
 
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
-public class RequestApiEndpointDTO {
+public class CreateApiEndpointDTO {
 
     @Getter
     @Setter
@@ -17,7 +19,9 @@ public class RequestApiEndpointDTO {
 
         private String serviceKey;
 
-        private String param;
+        private List<String> param;
+
+        private List<String> param2;
 
         private String status;
 

@@ -1,10 +1,11 @@
 package apiMonitering.service;
 
-import apiMonitering.dto.apiEndpointDTO.RequestApiEndpointDTO;
+import apiMonitering.dto.create.CreateApiEndpointDTO;
 import apiMonitering.domain.ApiEndpoint;
 import apiMonitering.exception.ApiEndPointException;
 import apiMonitering.repository.ApiEndpointRepository;
 import apiMonitering.type.ErrorCode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +16,9 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +41,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
     public Mono<String> getApi(ApiEndpoint request) {
 
-        ApiEndpoint apiEndpoint = apiEndpointRepository.findById(5L)
+        ApiEndpoint apiEndpoint = apiEndpointRepository.findById(1L)
                 .orElseThrow(() -> new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY));
 
         //        String baseUrl = "http://apis.data.go.kr/B551210/supplyEstiValueList/getSupplyEstiValueList";
@@ -102,12 +105,19 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     }
 
 
-    public ApiEndpoint createApi(RequestApiEndpointDTO.Request request) {
+    public ApiEndpoint createApi(CreateApiEndpointDTO.Request request) {
+
+        Map<String, String> query = new HashMap<>();
+
+        for (String param : request.getParam()) {
+            query.put(param, param);
+        }
+
 
         return apiEndpointRepository.save(ApiEndpoint.builder()
                 .url(request.getUrl())
                         .serviceKey(request.getServiceKey())
-                        .query(request.getParam())
+                        .query(query)
                 .build());
     }
 }

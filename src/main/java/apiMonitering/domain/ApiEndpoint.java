@@ -1,10 +1,13 @@
 package apiMonitering.domain;
 
+import apiMonitering.type.MapToJsonConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,9 +27,10 @@ public class ApiEndpoint {
 
     private String serviceKey;
 
-    private String parameters;
+    private List<String> parameters;
 
-    private String query;
+    @Convert(converter = MapToJsonConverter.class)
+    private Map<String, String> query;
 
     private int scheduledTime;
 

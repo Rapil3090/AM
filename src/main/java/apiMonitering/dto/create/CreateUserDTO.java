@@ -15,6 +15,8 @@ public class CreateUserDTO {
 
         private Long id;
 
+        private String name;
+
     }
 
 }

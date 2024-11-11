@@ -10,12 +10,14 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class UsersServiceImpl {
+public class UsersServiceImpl implements UsersService {
 
     private final UsersRepository usersRepository;
 
-    public Users createUser(CreateUserDTO request) {
+    public Users createUser(CreateUserDTO.Request request) {
 
-        return usersRepository.save()
+        return usersRepository.save(Users.builder()
+                .name(request.getName())
+                .build());
     }
 }
