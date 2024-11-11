@@ -40,7 +40,7 @@ public class ApiEndpoint {
 
     @JsonIgnore
     @JoinColumn(name = "users_id")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     private Users users;
 
 }

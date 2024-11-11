@@ -9,11 +9,11 @@ import java.net.URISyntaxException;
 
 public interface ApiEndpointService {
 
-    Mono<String> getApi(ApiEndpoint request);
+    void getApi();
 
     Mono<String> getApi2() throws URISyntaxException;
 
-    Flux<String> fetchAndProcessApiData();
+//    Flux<String> fetchAndProcessApiData();
 
     ApiEndpoint createApi(CreateApiEndpointDTO.Request request);
 }

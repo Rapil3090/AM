@@ -1,6 +1,7 @@
 package apiMonitering.type;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Convert;
@@ -16,6 +17,10 @@ public class MapToJsonConverter implements AttributeConverter<Map<String, String
 
     @Override
     public String convertToDatabaseColumn(Map<String, String> attribute) {
+        if (attribute == null) {
+            return null;
+        }
+
         try {
             return objectMapper.writeValueAsString(attribute);
         } catch (JsonProcessingException e) {
@@ -25,8 +30,13 @@ public class MapToJsonConverter implements AttributeConverter<Map<String, String
 
     @Override
     public Map<String, String> convertToEntityAttribute(String dbData) {
+
+        if (dbData == null) {
+            return null;
+        }
+
         try {
-            return objectMapper.readValue(dbData, HashMap.class);
+            return objectMapper.readValue(dbData, new TypeReference<Map<String, String>>() {});
         } catch (Exception e) {
             throw new RuntimeException("변환 실패", e);
         }

@@ -7,6 +7,7 @@ import apiMonitering.repository.ApiEndpointRepository;
 import apiMonitering.type.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -17,6 +18,7 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -27,55 +29,70 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
     private final ApiEndpointRepository apiEndpointRepository;
 
+//    @Scheduled(fixedRate = 10000)
+//    public Flux<String> fetchAndProcessApiData() {
+//
+//        List<ApiEndpoint> endPoints = apiEndpointRepository.findAll();
+//
+//        return Flux.fromIterable(endPoints)
+//                .flatMap(endPoint ->
+//                        getApi(endPoint)
+//                                .doOnNext(response -> System.out.println("API 응답:" + response))
+//                                .doOnError(error -> System.out.println("API 호출 오류:" + error.getMessage())));
+//    }
 
-    public Flux<String> fetchAndProcessApiData() {
+    public void getApi() {
 
-        List<ApiEndpoint> endPoints = apiEndpointRepository.findAll();
+        Iterable<ApiEndpoint> apiEndpoints = apiEndpointRepository.findAll();
 
-        return Flux.fromIterable(endPoints)
-                .flatMap(endPoint ->
-                        getApi((ApiEndpoint) endPoints)
-                                .doOnNext(response -> System.out.println("API 응답:" + response))
-                                .doOnError(error -> System.out.println("API 호출 오류:" + error.getMessage())));
-    }
+        for (ApiEndpoint apiEndpoint : apiEndpoints) {
 
-    public Mono<String> getApi(ApiEndpoint request) {
+            DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiEndpoint.getUrl());
+            factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
-        ApiEndpoint apiEndpoint = apiEndpointRepository.findById(1L)
+            Map<String, String> queryParams = apiEndpoint.getQuery();
+            String serviceKey = apiEndpoint.getServiceKey();
+
+            WebClient webClient = WebClient.builder()
+                    .uriBuilderFactory(factory)
+                    .baseUrl(apiEndpoint.getUrl())
+                    .build();
+
+            URI encodedServiceKey;
+
+            try {
+                encodedServiceKey = new URI(apiEndpoint.getServiceKey());
+            } catch (URISyntaxException e) {
+                throw new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY);
+            }
+
+            WebClient.RequestBodySpec requestBodySpec = (WebClient.RequestBodySpec) webClient.get().uri(uriBuilder -> {
+                queryParams.forEach((key, value) -> uriBuilder.queryParam(key, value));
+                return uriBuilder.build();
+            });
+
+            System.out.println(encodedServiceKey);
+
+            Mono<String> apiResponse = requestBodySpec
+                    .retrieve()
+                    .bodyToMono(String.class);
+
+            apiResponse.doOnNext(response -> System.out.println("API 응답 : " + response))
+                    .doOnError(error -> System.out.println("API 호출 오류 : " + error.getMessage()));
+
+        }
+
+        ApiEndpoint apiEndpoint = apiEndpointRepository.findById(17L)
                 .orElseThrow(() -> new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY));
 
         //        String baseUrl = "http://apis.data.go.kr/B551210/supplyEstiValueList/getSupplyEstiValueList";
-        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiEndpoint.getUrl());
-        factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
-
-        WebClient webClient = WebClient.builder()
-                .uriBuilderFactory(factory)
-                .baseUrl(apiEndpoint.getUrl())
-                .build();
 
 //        String serviceKey = "R3fWxDee7P9ysC5ty%2B6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw%3D%3D";
-//        String openYr = "2022";
 
-        URI encodedServiceKey;
-
-        try {
-            encodedServiceKey = new URI(apiEndpoint.getServiceKey());
-        } catch (URISyntaxException e) {
-            throw new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY);
-        }
-
-
-        return webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .queryParam("serviceKey", encodedServiceKey)
-                        .queryParam("openYr", apiEndpoint.getQuery())
-                        .build())
-                .retrieve()
-                .bodyToMono(String.class);
     }
 
 
-    public Mono<String> getApi2() throws URISyntaxException {
+        public Mono<String> getApi2() throws URISyntaxException {
 
         String baseUrl = "http://apis.data.go.kr/B551210/supplyValuePerformanceList/getSupplyValuePerformanceList";
 //        String serviceKey = "R3fWxDee7P9ysC5ty+6Y7LbJyFTiH0ToWmOtlRCJVUdWYd1kAkDzzTS9RA6Mn8Ikq0GYE1eEu462kax9JgnaNw==";
