@@ -109,10 +109,15 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
         Map<String, String> query = new HashMap<>();
 
-        for (String param : request.getParam()) {
-            query.put(param, param);
+        for (List<String> pair : request.getParam()) {
+            if (pair.size() == 2) {
+                String key = pair.get(0);
+                String value = pair.get(1);
+                query.put(key, value);
+            } else {
+                System.out.println("잘못된 형식의 param: " + pair);
+            }
         }
-
 
         return apiEndpointRepository.save(ApiEndpoint.builder()
                 .url(request.getUrl())
