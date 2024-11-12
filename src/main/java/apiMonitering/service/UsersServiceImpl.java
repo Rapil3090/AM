@@ -16,6 +16,9 @@ public class UsersServiceImpl implements UsersService {
 
     public Users createUser(CreateUserDTO.Request request) {
 
+        usersRepository.findByName(request.getName())
+                .orElseThrow(() -> new RuntimeException("이름이 이미 있습니다"));
+
         return usersRepository.save(Users.builder()
                 .name(request.getName())
                 .build());

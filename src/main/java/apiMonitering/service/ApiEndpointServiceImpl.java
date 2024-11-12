@@ -10,11 +10,14 @@ import apiMonitering.type.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.Schedules;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -67,43 +70,92 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
             throw new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY);
         }
 
-//        long startTime = System.currentTimeMillis();
         Instant startTime = Instant.now();
-        System.out.println(queryParams);
+
+        ApiResponse apiResponse = new ApiResponse();
+        apiResponse.setApiEndpoint(apiEndpoint);
 
         return webClient.get()
                 .uri(uriBuilder -> {
-                    queryParams.forEach(uriBuilder::queryParam);
-                    uriBuilder.queryParam("serviceKey", encodedServiceKey);
+                    queryParams.forEach(uriBuilder::queryParam);  // 쿼리 파라미터 추가
+                    uriBuilder.queryParam("serviceKey", encodedServiceKey);  // 추가적인 파라미터도 가능
                     return uriBuilder.build();
                 })
-//                .retrieve()
-//                .toEntity(String.class)
+
                 .exchangeToMono(response -> {
-//                .map(response -> {
-//                    long responseTime = System.currentTimeMillis() - startTime;
                     long responseTime = Duration.between(startTime, Instant.now()).toMillis();
-
-                    ApiResponse apiResponse = new ApiResponse();
-                    apiResponse.setStatusCode(response.statusCode().value());
                     apiResponse.setResponseTime((int) responseTime);
-                    apiResponse.setApiEndpoint(apiEndpoint);
 
-//                    return apiResponseRepository.save(apiResponse);
-                    return response.bodyToMono(String.class)
-                            .doOnNext(body -> {
-
-                                String truncatedBody = body.length() > 255 ? body.substring(0, 255) : body;
-                                apiResponse.setBody(truncatedBody);
-                            })
-                            .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
-//                            .then();
-//                            .doOnNext(apiResponse::setBody)
-//                            .thenReturn(apiResponse)
-//                            .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
+                    if (response.statusCode().is2xxSuccessful()) {
+                        return response.bodyToMono(String.class)
+                                .doOnNext(body -> {
+                                    // 응답 바디 처리 및 저장
+                                    apiResponse.setBody(body.length() > 255 ? body.substring(0, 255) : body);
+                                })
+                                .then(Mono.just(apiResponse)); // Mono<ApiResponse> 반환
+                    } else if (response.statusCode().is4xxClientError()) {
+                        // 클라이언트 오류 처리
+                        apiResponse.setStatusCode(response.statusCode().value());
+                        return Mono.just(apiResponse); // 오류 발생 시에도 ApiResponse 반환
+                    } else if (response.statusCode().is5xxServerError()) {
+                        // 서버 오류 처리
+                        apiResponse.setStatusCode(response.statusCode().value());
+                        return Mono.just(apiResponse); // 오류 발생 시에도 ApiResponse 반환
+                    } else {
+                        // 알 수 없는 오류 처리
+                        apiResponse.setStatusCode(response.statusCode().value());
+                        return Mono.just(apiResponse); // 오류 발생 시에도 ApiResponse 반환
+                    }
                 })
-                .doOnError(error -> System.out.println("에러"+ error.getMessage()));
-        }
+                .doOnTerminate(() -> {
+                    System.out.println("응답 완료");
+                })
+                .doOnError(e -> {
+                    System.out.println("에러 발생: " + e.getMessage());
+                });
+
+
+
+
+
+//                .uri(uriBuilder -> {
+//                    queryParams.forEach(uriBuilder::queryParam);
+//                    uriBuilder.queryParam("serviceKey", encodedServiceKey);
+//                    return uriBuilder.build();
+//                })
+//                .exchangeToMono(response -> {
+//                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+//
+//                    apiResponse.setStatusCode(response.statusCode().value());
+//                    apiResponse.setResponseTime((int) responseTime);
+//
+//                    return response.bodyToMono(String.class)
+//                            .doOnNext(body -> {
+//
+//                                String truncatedBody = body.length() > 255 ? body.substring(0, 255) : body;
+//                                apiResponse.setBody(truncatedBody);
+//                            })
+//                            .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
+//                })
+////                .onErrorResume(e -> e instanceof WebClientResponseException, e -> {
+////                    WebClientResponseException error = (WebClientResponseException) e;
+////
+////                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+////
+////                    apiResponse.setStatusCode(error.getStatusCode().value());
+////
+////                    return Mono.fromCallable(() -> apiResponseRepository.save(apiResponse))
+////                            .subscribeOn(Schedulers.boundedElastic());
+////                });
+//
+//                .onErrorResume(WebClientResponseException.class, error -> {
+//                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+//                    apiResponse.setStatusCode(error.getStatusCode().value());
+//                    apiResponse.setResponseTime((int) responseTime);
+//
+//                    return Mono.just(apiResponseRepository.save(apiResponse));
+//                });
+    }
 
 
     public ApiEndpoint createApi(CreateApiEndpointDTO.Request request) {

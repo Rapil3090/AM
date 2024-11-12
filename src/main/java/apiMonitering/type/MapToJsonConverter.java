@@ -10,10 +10,10 @@ import jakarta.persistence.Converter;
 import java.util.HashMap;
 import java.util.Map;
 
-@Converter
+@Converter(autoApply = true)
 public class MapToJsonConverter implements AttributeConverter<Map<String, String>, String> {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public String convertToDatabaseColumn(Map<String, String> attribute) {
@@ -24,7 +24,8 @@ public class MapToJsonConverter implements AttributeConverter<Map<String, String
         try {
             return objectMapper.writeValueAsString(attribute);
         } catch (JsonProcessingException e) {
-            throw  new RuntimeException("변환 실패", e);
+//            throw  new RuntimeException("변환 실패", e);
+            return attribute.toString();
         }
     }
 
@@ -38,7 +39,10 @@ public class MapToJsonConverter implements AttributeConverter<Map<String, String
         try {
             return objectMapper.readValue(dbData, new TypeReference<Map<String, String>>() {});
         } catch (Exception e) {
-            throw new RuntimeException("변환 실패", e);
+//            throw new RuntimeException("변환 실패", e);
+            Map<String, String> result = new HashMap<>();
+            result.put("error", dbData);
+            return result;
         }
     }
 }

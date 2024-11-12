@@ -29,9 +29,6 @@ public class ApiResponse {
 
     private String errorMessage;
 
-    @JsonProperty("cmmMsgHeader")
-    private String cmmMsgHeader;
-
     @JsonIgnore
     @JoinColumn(name = "apiendpoint_id")
     @ManyToOne(fetch = FetchType.LAZY)
