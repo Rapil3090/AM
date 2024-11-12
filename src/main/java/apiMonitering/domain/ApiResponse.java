@@ -21,7 +21,7 @@ public class ApiResponse {
     @Column(name = "apiresponse_id")
     private Long id;
 
-    private String statusCode;
+    private int statusCode;
 
     private int responseTime;
 

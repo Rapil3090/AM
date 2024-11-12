@@ -1,5 +1,6 @@
 package apiMonitering.controller;
 
+import apiMonitering.domain.ApiResponse;
 import apiMonitering.dto.create.CreateApiEndpointDTO;
 import apiMonitering.domain.ApiEndpoint;
 import apiMonitering.service.ApiEndpointService;
@@ -22,11 +23,11 @@ public class ApiEndpointController {
     private final ApiEndpointService apiEndpointService;
 
     @GetMapping("/api")
-    public ResponseEntity<Mono<String>> getTest(Model model) throws URISyntaxException {
+    public ResponseEntity<Mono<ApiResponse>> getTest(Model model) throws URISyntaxException {
 
 
 
-        return ResponseEntity.ok(apiEndpointService.getApi(7L));
+        return ResponseEntity.ok(apiEndpointService.getApi(1L));
     }
 
     @GetMapping("/api3")

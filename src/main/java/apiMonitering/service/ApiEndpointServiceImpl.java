@@ -1,11 +1,14 @@
 package apiMonitering.service;
 
+import apiMonitering.domain.ApiResponse;
 import apiMonitering.dto.create.CreateApiEndpointDTO;
 import apiMonitering.domain.ApiEndpoint;
 import apiMonitering.exception.ApiEndPointException;
 import apiMonitering.repository.ApiEndpointRepository;
+import apiMonitering.repository.ApiResponseRepository;
 import apiMonitering.type.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,8 @@ import java.util.Map;
 public class ApiEndpointServiceImpl implements ApiEndpointService {
 
     private final ApiEndpointRepository apiEndpointRepository;
+    private final ApiResponseRepository apiResponseRepository;
+
 
     @Scheduled(fixedRate = 10000)
     public void scheduledApiCall() {
@@ -37,7 +42,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     }
 
 
-    public Mono<String> getApi(Long id) {
+    public Mono<ApiResponse> getApi(Long id) {
 
         ApiEndpoint apiEndpoint =apiEndpointRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("에러발생"));
@@ -60,6 +65,8 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
             throw new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY);
         }
 
+        long startTime = System.currentTimeMillis();
+
         return webClient.get()
                 .uri(uriBuilder -> {
                     queryParams.forEach(uriBuilder::queryParam);
@@ -67,9 +74,17 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                     return uriBuilder.build();
                 })
                 .retrieve()
-                .bodyToMono(String.class)
-                .doOnNext(response -> System.out.println("응답" + response))
-                .doOnError(error -> System.out.println("에러" + error.getMessage()));
+                .toEntity(String.class)
+                .map(response -> {
+                    long responseTime = System.currentTimeMillis() - startTime;
+
+                    ApiResponse apiResponse = new ApiResponse();
+                    apiResponse.setStatusCode(response.getStatusCode().value());
+                    apiResponse.setResponseTime((int) responseTime);
+                    apiResponse.setApiEndpoint(apiEndpoint);
+
+                    return apiResponseRepository.save(apiResponse);
+                });
         }
 
 
