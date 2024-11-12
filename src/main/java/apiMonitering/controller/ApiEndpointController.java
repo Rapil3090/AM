@@ -22,17 +22,17 @@ public class ApiEndpointController {
     private final ApiEndpointService apiEndpointService;
 
     @GetMapping("/api")
-    public ResponseEntity<String> getTest(Model model) throws URISyntaxException {
+    public ResponseEntity<Mono<String>> getTest(Model model) throws URISyntaxException {
 
-        apiEndpointService.getApi();
 
-        return ResponseEntity.ok("호출완료");
+
+        return ResponseEntity.ok(apiEndpointService.getApi(7L));
     }
 
-    @GetMapping("/api2")
-    public ResponseEntity<Mono<String>> getTest2(Model model) throws URISyntaxException {
+    @GetMapping("/api3")
+    public void getApiCall() {
 
-        return ResponseEntity.ok(apiEndpointService.getApi2());
+        apiEndpointService.scheduledApiCall();
     }
 
     @PostMapping("/save")
