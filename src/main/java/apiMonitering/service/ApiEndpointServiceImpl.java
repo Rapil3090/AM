@@ -18,6 +18,8 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +67,9 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
             throw new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY);
         }
 
-        long startTime = System.currentTimeMillis();
+//        long startTime = System.currentTimeMillis();
+        Instant startTime = Instant.now();
+        System.out.println(queryParams);
 
         return webClient.get()
                 .uri(uriBuilder -> {
@@ -73,18 +77,32 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                     uriBuilder.queryParam("serviceKey", encodedServiceKey);
                     return uriBuilder.build();
                 })
-                .retrieve()
-                .toEntity(String.class)
-                .map(response -> {
-                    long responseTime = System.currentTimeMillis() - startTime;
+//                .retrieve()
+//                .toEntity(String.class)
+                .exchangeToMono(response -> {
+//                .map(response -> {
+//                    long responseTime = System.currentTimeMillis() - startTime;
+                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
 
                     ApiResponse apiResponse = new ApiResponse();
-                    apiResponse.setStatusCode(response.getStatusCode().value());
+                    apiResponse.setStatusCode(response.statusCode().value());
                     apiResponse.setResponseTime((int) responseTime);
                     apiResponse.setApiEndpoint(apiEndpoint);
 
-                    return apiResponseRepository.save(apiResponse);
-                });
+//                    return apiResponseRepository.save(apiResponse);
+                    return response.bodyToMono(String.class)
+                            .doOnNext(body -> {
+
+                                String truncatedBody = body.length() > 255 ? body.substring(0, 255) : body;
+                                apiResponse.setBody(truncatedBody);
+                            })
+                            .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
+//                            .then();
+//                            .doOnNext(apiResponse::setBody)
+//                            .thenReturn(apiResponse)
+//                            .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
+                })
+                .doOnError(error -> System.out.println("에러"+ error.getMessage()));
         }
 
 

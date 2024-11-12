@@ -8,10 +8,7 @@ import ch.qos.logback.core.model.Model;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.net.URISyntaxException;
@@ -22,12 +19,12 @@ public class ApiEndpointController {
 
     private final ApiEndpointService apiEndpointService;
 
-    @GetMapping("/api")
-    public ResponseEntity<Mono<ApiResponse>> getTest(Model model) throws URISyntaxException {
+    @GetMapping("/api/{id}")
+    public ResponseEntity<Mono<ApiResponse>> getTest(@Valid @PathVariable("id") Long id ) {
 
 
 
-        return ResponseEntity.ok(apiEndpointService.getApi(1L));
+        return ResponseEntity.ok(apiEndpointService.getApi(id));
     }
 
     @GetMapping("/api3")
