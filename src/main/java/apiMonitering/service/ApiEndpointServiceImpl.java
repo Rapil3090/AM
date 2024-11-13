@@ -36,14 +36,18 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     private final ApiResponseRepository apiResponseRepository;
 
 
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 6000)
     public void scheduledApiCall() {
 
-        Long id = 7L;
-        System.out.println("출력 완료");
-        getApi(id)
-                .subscribe(response -> System.out.println("응답" + response),
-                        error -> System.out.println("에러" + error.getMessage()));
+        apiEndpointRepository.findAll().forEach(apiEndpoint -> {
+            Long id = apiEndpoint.getId();
+
+            getApi(id)
+                    .subscribe(
+                            response -> System.out.println("응답: " + response),
+                            error -> System.out.println("에러: " + error.getMessage())
+                    );
+        });
     }
 
 
@@ -85,7 +89,6 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                 .exchangeToMono(response -> {
                     long responseTime = Duration.between(startTime, Instant.now()).toMillis();
 
-//                    apiResponse.setStatusCode(response.statusCode().value());
                     apiResponse.setResponseTime((int) responseTime);
 
                     return response.bodyToMono(String.class)
