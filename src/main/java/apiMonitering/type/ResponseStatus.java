@@ -1,8 +1,11 @@
 package apiMonitering.type;
 
+import lombok.Getter;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
+@Getter
 public enum ResponseStatus {
 
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", 500),
@@ -25,9 +28,6 @@ public enum ResponseStatus {
         this.statusCode = statusCode;
     }
 
-    public int getStatusCode() {
-        return statusCode;
-    }
 
     public static int fromBody(String body) {
 
