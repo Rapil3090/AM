@@ -54,7 +54,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     public Mono<ApiResponse> getApi(Long id) {
 
         ApiEndpoint apiEndpoint =apiEndpointRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("에러발생"));
+                .orElseThrow(() -> new ApiEndPointException(ErrorCode.ENDPOINT_ID_NOT_FOUND));
 
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiEndpoint.getUrl());
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
