@@ -11,10 +11,6 @@ public interface ApiEndpointService {
 
     Mono<ApiResponse> getApi(Long id);
 
-//    Mono<String> getApi2() throws URISyntaxException;
-
-//    Flux<String> fetchAndProcessApiData();
-
     ApiEndpoint createApi(CreateApiEndpointDTO.Request request);
 
     void scheduledApiCall();
