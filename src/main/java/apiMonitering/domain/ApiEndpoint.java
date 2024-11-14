@@ -29,12 +29,6 @@ public class ApiEndpoint {
     @Convert(converter = MapToJsonConverter.class)
     private Map<String, String> queryParameters;
 
-    private int scheduledTime;
-
-    private String status;
-
-    private LocalDateTime startTime;
-
     @JsonIgnore
     @JoinColumn(name = "users_id")
     @ManyToOne(fetch = FetchType.EAGER)
