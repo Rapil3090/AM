@@ -95,7 +95,10 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                     return response.bodyToMono(String.class)
                             .doOnNext(body -> {
                                 apiResponse.setBody(body.length() > 255 ? body.substring(0, 255) : body);
-                                apiResponse.setStatusCode(ResponseStatus.fromBody(body));
+
+                                int statusCode = ResponseStatus.fromBody(body);
+                                apiResponse.setStatusCode(statusCode);
+                                apiResponse.set_success(statusCode == 200);
                             })
                             .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
                 })
@@ -104,6 +107,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                     long responseTime = Duration.between(startTime, Instant.now()).toMillis();
                     apiResponse.setStatusCode(error.getStatusCode().value());
                     apiResponse.setResponseTime((int) responseTime);
+                    apiResponse.set_success(false);
 
                     return Mono.just(apiResponseRepository.save(apiResponse));
                 });

@@ -29,6 +29,8 @@ public class ApiResponse {
 
     private String errorMessage;
 
+    private boolean is_success;
+
     @JsonIgnore
     @JoinColumn(name = "apiendpoint_id")
     @ManyToOne(fetch = FetchType.LAZY)
