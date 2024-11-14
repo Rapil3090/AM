@@ -59,7 +59,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiEndpoint.getUrl());
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
-        Map<String, String> queryParams = apiEndpoint.getQuery();
+        Map<String, String> queryParams = apiEndpoint.getQueryParameters();
 
         WebClient webClient = WebClient.builder()
                 .uriBuilderFactory(factory)
@@ -156,7 +156,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
         return apiEndpointRepository.save(ApiEndpoint.builder()
                 .url(request.getUrl())
                         .serviceKey(request.getServiceKey())
-                        .query(query)
+                        .queryParameters(query)
                 .build());
     }
 }
