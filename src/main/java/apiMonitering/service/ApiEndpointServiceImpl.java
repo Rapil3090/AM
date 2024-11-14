@@ -98,7 +98,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
                                 int statusCode = ResponseStatus.fromBody(body);
                                 apiResponse.setStatusCode(statusCode);
-                                apiResponse.set_success(statusCode == 200);
+                                apiResponse.set_success(statusCode == 200 || statusCode == 401 );
                             })
                             .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
                 })
