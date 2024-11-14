@@ -7,6 +7,7 @@ import apiMonitering.exception.ApiEndPointException;
 import apiMonitering.repository.ApiEndpointRepository;
 import apiMonitering.repository.ApiResponseRepository;
 import apiMonitering.type.ErrorCode;
+import apiMonitering.type.ResponseStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -93,38 +94,8 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
                     return response.bodyToMono(String.class)
                             .doOnNext(body -> {
-
-                                String truncatedBody = body.length() > 255 ? body.substring(0, 255) : body;
-                                apiResponse.setBody(truncatedBody);
-
-                                if (body != null) {
-
-                                    int finalStatusCode = 200;
-
-                                    if (body.contains("INTERNAL_SERVER_ERROR")) {
-                                        finalStatusCode = 500;
-                                    } else if (body.contains("NO_MANDATORY_REQUEST_PARAMETER_ERROR")) {
-                                        finalStatusCode = 400;
-                                    } else if (body.contains("SERVICE_UNAVAILABLE")) {
-                                        finalStatusCode = 503;
-                                    } else if (body.contains("Unauthorized")) {
-                                        finalStatusCode = 401;
-                                    } else if (body.contains("Forbidden")) {
-                                        finalStatusCode = 403;
-                                    } else if (body.contains("Not_Found")) {
-                                        finalStatusCode = 404;
-                                    } else if (body.contains("Method_Not_Allowed")) {
-                                        finalStatusCode = 405;
-                                    } else if (body.contains("NORMAL_CODE")) {
-                                        finalStatusCode = 00;
-                                    } else if (body.contains("APPLICATION_ERROR")) {
-                                        finalStatusCode = 01;
-                                    } else if (body.contains("SERVICE_KEY_IS_NOT_REGISTERED_ERROR")) {
-                                        finalStatusCode = 30;
-                                    }
-
-                                    apiResponse.setStatusCode(finalStatusCode);
-                                }
+                                apiResponse.setBody(body.length() > 255 ? body.substring(0, 255) : body);
+                                apiResponse.setStatusCode(ResponseStatus.fromBody(body));
                             })
                             .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
                 })
