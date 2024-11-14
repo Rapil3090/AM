@@ -26,10 +26,8 @@ public class ApiEndpoint {
 
     private String serviceKey;
 
-//    private List<List<String>> parameters;
-
     @Convert(converter = MapToJsonConverter.class)
-    private Map<String, String> query;
+    private Map<String, String> queryParameters;
 
     private int scheduledTime;
 
