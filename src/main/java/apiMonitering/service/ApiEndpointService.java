@@ -9,7 +9,7 @@ import java.net.URISyntaxException;
 
 public interface ApiEndpointService {
 
-    Mono<ApiResponse> getApi(Long id);
+    Mono<ApiResponse> getApi(ApiEndpoint apiEndpoint);
 
     ApiEndpoint createApi(CreateApiEndpointDTO.Request request);
 

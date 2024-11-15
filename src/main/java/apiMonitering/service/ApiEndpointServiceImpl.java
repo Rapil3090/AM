@@ -41,9 +41,9 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     public void scheduledApiCall() {
 
         apiEndpointRepository.findAll().forEach(apiEndpoint -> {
-            Long id = apiEndpoint.getId();
 
-            getApi(id)
+
+            getApi(apiEndpoint)
                     .subscribe(
                             response -> System.out.println("응답: " + response),
                             error -> System.out.println("에러: " + error.getMessage())
@@ -52,10 +52,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
     }
 
 
-    public Mono<ApiResponse> getApi(Long id) {
-
-        ApiEndpoint apiEndpoint =apiEndpointRepository.findById(id)
-                .orElseThrow(() -> new ApiEndPointException(ErrorCode.ENDPOINT_ID_NOT_FOUND));
+    public Mono<ApiResponse> getApi(ApiEndpoint apiEndpoint) {
 
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiEndpoint.getUrl());
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
