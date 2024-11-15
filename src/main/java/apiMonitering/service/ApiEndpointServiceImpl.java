@@ -90,6 +90,10 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                 .exchangeToMono(response -> {
                     Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
 
+                    if (responseTime >= 500) {
+                        apiResponse.setResponseTimeOut("응답시간지연");
+                    } else apiResponse.setResponseTimeOut("정상");
+
                     apiResponse.setResponseTime(responseTime);
 
                     return response.bodyToMono(String.class)
