@@ -88,9 +88,9 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                     return uriBuilder.build();
                 })
                 .exchangeToMono(response -> {
-                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
 
-                    apiResponse.setResponseTime((int) responseTime);
+                    apiResponse.setResponseTime(responseTime);
 
                     return response.bodyToMono(String.class)
                             .doOnNext(body -> {
@@ -103,7 +103,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                 .onErrorResume(WebClientResponseException.class, error -> {
                     long responseTime = Duration.between(startTime, Instant.now()).toMillis();
                     apiResponse.setStatusCode(error.getStatusCode().value());
-                    apiResponse.setResponseTime((int) responseTime);
+                    apiResponse.setResponseTime(responseTime);
                     apiResponse.set_success(false);
 
                     return Mono.just(apiResponseRepository.save(apiResponse));

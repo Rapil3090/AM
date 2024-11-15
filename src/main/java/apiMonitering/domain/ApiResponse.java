@@ -23,7 +23,7 @@ public class ApiResponse {
 
     private int statusCode;
 
-    private int responseTime;
+    private Long responseTime;
 
     private String body;
 
