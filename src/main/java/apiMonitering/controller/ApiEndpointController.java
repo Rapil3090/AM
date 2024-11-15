@@ -19,13 +19,13 @@ public class ApiEndpointController {
 
     private final ApiEndpointService apiEndpointService;
 
-    @GetMapping("/api/{id}")
-    public ResponseEntity<Mono<ApiResponse>> getTest(@Valid @PathVariable("id") Long id ) {
-
-
-
-        return ResponseEntity.ok(apiEndpointService.getApi(id));
-    }
+//    @GetMapping("/api/{id}")
+//    public ResponseEntity<Mono<ApiResponse>> getTest(@Valid @PathVariable("id") Long id ) {
+//
+//
+//
+//        return ResponseEntity.ok(apiEndpointService.getApi(id));
+//    }
 
     @GetMapping("/api3")
     public void getApiCall() {
