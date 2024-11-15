@@ -95,10 +95,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                     return response.bodyToMono(String.class)
                             .doOnNext(body -> {
                                 apiResponse.setBody(body.length() > 255 ? body.substring(0, 255) : body);
-
-                                int statusCode = ResponseStatus.fromBody(body);
-                                apiResponse.setStatusCode(statusCode);
-                                apiResponse.set_success(statusCode == 200 || statusCode == 401 );
+                                apiResponse.setStatusCode(response.statusCode().value());
                             })
                             .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
                 })
