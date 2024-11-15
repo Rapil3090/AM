@@ -31,6 +31,8 @@ public class ApiResponse {
 
     private boolean is_success;
 
+    private String responseTimeOut;
+
     @JsonIgnore
     @JoinColumn(name = "apiendpoint_id")
     @ManyToOne(fetch = FetchType.LAZY)
