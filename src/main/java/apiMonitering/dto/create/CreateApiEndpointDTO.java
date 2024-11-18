@@ -21,8 +21,6 @@ public class CreateApiEndpointDTO {
 
         private String serviceKey;
 
-        private List<List<String>> param;
-
         private String status;
 
         private LocalDateTime startTime;
