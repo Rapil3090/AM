@@ -64,10 +64,16 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                 .baseUrl(apiEndpoint.getUrl())
                 .build();
 
+        String apiKeyValue = parameters.stream()
+                .filter(param -> "apiKey".equalsIgnoreCase(param.getType()))
+                .map(ApiEndpoint.Parameter::getValue)
+                .findFirst()
+                .orElseThrow(() -> new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY));
+
         URI encodedServiceKey;
 
         try {
-            encodedServiceKey = new URI(apiEndpoint.getServiceKey());
+            encodedServiceKey = new URI(apiKeyValue);
         } catch (URISyntaxException e) {
             throw new ApiEndPointException(ErrorCode.INVALID_SERVICEKEY);
         }
@@ -82,13 +88,34 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                 .uri(uriBuilder -> {
                     parameters.stream()
                                     .filter(param -> "query".equalsIgnoreCase(param.getType()))
-                                            .forEach(param ->
-                                                    uriBuilder.queryParam(param.getKey(), param.getValue()));
-                        return uriBuilder.build();
+                                    .forEach(param ->
+                                                uriBuilder.queryParam(param.getKey(), param.getValue()));
 
+                    boolean hasQueryType = parameters.stream()
+                            .anyMatch(param -> "query".equalsIgnoreCase(param.getType()));
+
+                    if (hasQueryType) {
+                        parameters.stream()
+                                .filter(param -> "apiKey".equalsIgnoreCase(param.getType()))
+                                .findFirst()
+                                .ifPresent(apiKeyParam ->
+                                        uriBuilder.queryParam(apiKeyParam.getKey(), encodedServiceKey));
+                    }
+                        return uriBuilder.build();
                 })
 
                 .headers(headers -> {
+
+                    boolean hasQueryType = parameters.stream()
+                                    .anyMatch(param -> "query".equalsIgnoreCase(param.getType()));
+
+                    if (!hasQueryType) {
+                        parameters.stream()
+                                .filter(param -> "apiKey".equalsIgnoreCase(param.getType()))
+                                .findFirst()
+                                .ifPresent(apiKeyParam -> headers.add(apiKeyParam.getKey(), String.valueOf(encodedServiceKey)));
+                    }
+
                     parameters.stream()
                             .filter(param -> "header".equalsIgnoreCase(param.getType()))
                             .forEach(param -> headers.add(param.getKey(), param.getValue()));
@@ -123,21 +150,8 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
     public ApiEndpoint createApi(CreateApiEndpointDTO.Request request) {
 
-        Map<String, String> query = new HashMap<>();
-
-        for (List<String> pair : request.getParam()) {
-            if (pair.size() == 2) {
-                String key = pair.get(0);
-                String value = pair.get(1);
-                query.put(key, value);
-            } else {
-                System.out.println("잘못된 형식의 param: " + pair);
-            }
-        }
-
         return apiEndpointRepository.save(ApiEndpoint.builder()
                 .url(request.getUrl())
-                        .serviceKey(request.getServiceKey())
                         .parameters(request.getParameters())
                 .build());
     }
