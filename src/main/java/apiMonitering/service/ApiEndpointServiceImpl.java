@@ -57,7 +57,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiEndpoint.getUrl());
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
-        Map<String, String> queryParams = apiEndpoint.getQueryParameters();
+        List<ApiEndpoint.Parameter> parameters = apiEndpoint.getParameters();
 
         WebClient webClient = WebClient.builder()
                 .uriBuilderFactory(factory)
@@ -80,9 +80,18 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
         return webClient.get()
 
                 .uri(uriBuilder -> {
-                    queryParams.forEach(uriBuilder::queryParam);
-                    uriBuilder.queryParam("serviceKey", encodedServiceKey);
-                    return uriBuilder.build();
+                    parameters.stream()
+                                    .filter(param -> "query".equalsIgnoreCase(param.getType()))
+                                            .forEach(param ->
+                                                    uriBuilder.queryParam(param.getKey(), param.getValue()));
+                        return uriBuilder.build();
+
+                })
+
+                .headers(headers -> {
+                    parameters.stream()
+                            .filter(param -> "header".equalsIgnoreCase(param.getType()))
+                            .forEach(param -> headers.add(param.getKey(), param.getValue()));
                 })
                 .exchangeToMono(response -> {
                     Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
@@ -129,7 +138,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
         return apiEndpointRepository.save(ApiEndpoint.builder()
                 .url(request.getUrl())
                         .serviceKey(request.getServiceKey())
-                        .queryParameters(query)
+                        .parameters(request.getParameters())
                 .build());
     }
 }

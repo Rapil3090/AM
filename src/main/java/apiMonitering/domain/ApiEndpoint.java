@@ -1,11 +1,13 @@
 package apiMonitering.domain;
 
 import apiMonitering.utils.MapToJsonConverter;
+import apiMonitering.utils.ParamListToJsonConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -26,12 +28,20 @@ public class ApiEndpoint {
 
     private String serviceKey;
 
-    @Convert(converter = MapToJsonConverter.class)
-    private Map<String, String> queryParameters;
+    @Convert(converter = ParamListToJsonConverter.class)
+    @Lob
+    private List<Parameter> parameters;
 
     @JsonIgnore
     @JoinColumn(name = "users_id")
     @ManyToOne(fetch = FetchType.EAGER)
     private Users users;
 
+    @Embeddable
+    @Getter
+    public static class Parameter { // public 추가
+        private String type;
+        private String key;
+        private String value;
+    }
 }

@@ -1,5 +1,6 @@
 package apiMonitering.dto.create;
 
+import apiMonitering.domain.ApiEndpoint;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -25,6 +26,8 @@ public class CreateApiEndpointDTO {
         private String status;
 
         private LocalDateTime startTime;
+
+        private List<ApiEndpoint.Parameter> parameters;
 
     }
 
