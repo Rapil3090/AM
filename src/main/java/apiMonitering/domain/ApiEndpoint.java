@@ -39,7 +39,7 @@ public class ApiEndpoint {
 
     @Embeddable
     @Getter
-    public static class Parameter { // public 추가
+    public static class Parameter {
         private String type;
         private String key;
         private String value;
