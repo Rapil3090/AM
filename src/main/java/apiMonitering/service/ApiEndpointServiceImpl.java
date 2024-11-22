@@ -9,6 +9,7 @@ import apiMonitering.repository.ApiResponseRepository;
 import apiMonitering.type.ErrorCode;
 import apiMonitering.type.ResponseStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.annotation.Schedules;
@@ -19,6 +20,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.retry.Retry;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -123,19 +126,40 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                 .exchangeToMono(response -> {
                     Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
 
-                    if (responseTime >= 500) {
-                        apiResponse.setResponseTimeOut("응답시간지연");
-                    } else apiResponse.setResponseTimeOut("정상");
+                    if (response.statusCode().is2xxSuccessful()) {
 
-                    apiResponse.setResponseTime(responseTime);
+                        if (responseTime >= 500) {
+                            apiResponse.setResponseTimeOut("응답시간지연");
+                        } else apiResponse.setResponseTimeOut("정상");
 
-                    return response.bodyToMono(String.class)
-                            .doOnNext(body -> {
-                                apiResponse.setBody(body.length() > 255 ? body.substring(0, 255) : body);
-                                apiResponse.setStatusCode(response.statusCode().value());
-                            })
-                            .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
+                        apiResponse.setResponseTime(responseTime);
+
+                        return response.bodyToMono(String.class)
+                                .doOnNext(body -> {
+                                    apiResponse.setBody(body.length() > 255 ? body.substring(0, 255) : body);
+                                    apiResponse.setStatusCode(response.statusCode().value());
+                                })
+                                .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
+                    } else if (response.statusCode().is4xxClientError()) {
+                        return Mono.error(new ApiEndPointException(ErrorCode.CLIENT_ERROR));
+                    } else if (response.statusCode().is5xxServerError()) {
+                        return Mono.error(new ApiEndPointException(ErrorCode.SERVER_ERROR));
+                    } else {
+                        return Mono.error(new ApiEndPointException(ErrorCode.UNKNOWN_ERROR));
+                    }
+
                 })
+
+                .retryWhen(
+                        Retry.backoff(3, Duration.ofSeconds(3))
+                                .filter(throwable ->
+                                        throwable instanceof WebClientResponseException &&
+                                                ((WebClientResponseException) throwable).getStatusCode().is5xxServerError()
+                                )
+                                .doBeforeRetry(retrySignal -> log.warn(
+                                        "재시도 : {}회차, 에러 이: {}", retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())
+                                )
+                )
 
                 .onErrorResume(WebClientResponseException.class, error -> {
                     long responseTime = Duration.between(startTime, Instant.now()).toMillis();
