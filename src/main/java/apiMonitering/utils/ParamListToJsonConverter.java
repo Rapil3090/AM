@@ -8,6 +8,7 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 @Converter
@@ -18,6 +19,10 @@ public class ParamListToJsonConverter implements AttributeConverter<List<ApiEndp
     @Override
     public String convertToDatabaseColumn(List<ApiEndpoint.Parameter> attribute) {
 
+        if (attribute == null || attribute.isEmpty()) {
+            return null;
+        }
+
         try {
             return objectMapper.writeValueAsString(attribute);
         } catch (JsonProcessingException e) {
@@ -27,6 +32,10 @@ public class ParamListToJsonConverter implements AttributeConverter<List<ApiEndp
 
     @Override
     public List<ApiEndpoint.Parameter> convertToEntityAttribute(String dbData) {
+
+        if (dbData == null || dbData.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         try {
             return objectMapper.readValue(dbData, new TypeReference<List<ApiEndpoint.Parameter>>() {});
