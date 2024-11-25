@@ -14,4 +14,6 @@ public interface ApiEndpointService {
     ApiEndpoint createApi(CreateApiEndpointDTO.Request request);
 
     void scheduledApiCall();
+
+    String setServiceKey(CreateApiEndpointDTO.Request request);
 }

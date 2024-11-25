@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,5 +179,20 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                 .url(request.getUrl())
                         .parameters(request.getParameters())
                 .build());
+    }
+
+    public String setServiceKey(CreateApiEndpointDTO.Request request) {
+
+        List<ApiEndpoint.Parameter> newParameters = request.getParameters();
+
+        List<ApiEndpoint> apiEndpoints = apiEndpointRepository.findAll();
+
+        apiEndpoints.forEach(apiEndpoint -> {
+            apiEndpoint.setParameters(newParameters);
+        });
+
+        apiEndpointRepository.saveAll(apiEndpoints);
+
+        return "ok";
     }
 }
