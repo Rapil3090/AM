@@ -136,41 +136,60 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                         apiResponse.setResponseTime(responseTime);
 
                         return response.bodyToMono(String.class)
-                                .doOnNext(body -> {
+                                .map(body -> {
                                     apiResponse.setBody(body.length() > 255 ? body.substring(0, 255) : body);
                                     apiResponse.setStatusCode(response.statusCode().value());
-                                })
-                                .flatMap(responseBody -> Mono.just(apiResponseRepository.save(apiResponse)));
-                    } else if (response.statusCode().is4xxClientError()) {
-                        return Mono.error(new ApiEndPointException(ErrorCode.CLIENT_ERROR));
-                    } else if (response.statusCode().is5xxServerError()) {
-                        return Mono.error(new ApiEndPointException(ErrorCode.SERVER_ERROR));
-                    } else {
-                        return Mono.error(new ApiEndPointException(ErrorCode.UNKNOWN_ERROR));
+                                    apiResponse.setResponseTimeOut("정상");
+                                    apiResponse.set_success(true);
+                                    return apiResponseRepository.save(apiResponse);
+                                });
+
+
+                    }
+                    return Mono.error(new ApiEndPointException(ErrorCode.UNKNOWN_ERROR));
+
+                    })
+                                .timeout(Duration.ofSeconds(3))
+                                .retryWhen(
+                                        Retry.backoff(3, Duration.ofSeconds(3))
+                                                .filter(throwable ->
+                                                        throwable instanceof WebClientResponseException &&
+                                                                ((WebClientResponseException) throwable).getStatusCode().is5xxServerError()
+                                                )
+                                                .doBeforeRetry(retrySignal -> log.warn(
+                                                        "재시도 : {}회차, 에러 이: {}", retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())
+                                                )
+                                )
+
+                                .onErrorResume(throwable -> {
+                                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+
+                                    apiResponse.setResponseTime(responseTime);
+                                    apiResponse.set_success(false);
+
+                                    if (throwable instanceof WebClientResponseException error) {
+
+                                        apiResponse.setStatusCode(error.getStatusCode().value());
+
+                                        if (error.getStatusCode().is4xxClientError()) {
+                                            log.error("4xx 클라이언트 에러 발생: 상태코드={}", error.getStatusCode());
+                                            return Mono.just(apiResponseRepository.save(apiResponse));
+                                        } else if (error.getStatusCode().is5xxServerError()) {
+                                            log.error("5xx 서버 에러 발생: 상태코드={}", error.getStatusCode());
+                                            return Mono.just(apiResponseRepository.save(apiResponse));
+                                        }
+                                    }
+
+                                    log.error("알 수 없는 에러 발생 : {}", throwable.getMessage());
+                                    apiResponse.setStatusCode(500);
+
+                                    return Mono.just(apiResponseRepository.save(apiResponse));
+                                });
+
                     }
 
-                })
 
-                .retryWhen(
-                        Retry.backoff(3, Duration.ofSeconds(3))
-                                .filter(throwable ->
-                                        throwable instanceof WebClientResponseException &&
-                                                ((WebClientResponseException) throwable).getStatusCode().is5xxServerError()
-                                )
-                                .doBeforeRetry(retrySignal -> log.warn(
-                                        "재시도 : {}회차, 에러 이: {}", retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())
-                                )
-                )
 
-                .onErrorResume(WebClientResponseException.class, error -> {
-                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
-                    apiResponse.setStatusCode(error.getStatusCode().value());
-                    apiResponse.setResponseTime(responseTime);
-                    apiResponse.set_success(false);
-
-                    return Mono.just(apiResponseRepository.save(apiResponse));
-                });
-    }
 
 
     public ApiEndpoint createApi(CreateApiEndpointDTO.Request request) {
