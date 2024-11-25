@@ -13,6 +13,7 @@ public enum ErrorCode {
     CLIENT_ERROR("클라이언트 요청 오류"),
     SERVER_ERROR("서버 오류 발생"),
     UNKNOWN_ERROR("알 수 없는 오류 발생"),
+    RETRY_EXHAUSTED("재시도 횟수를 모두 소모했습니다."),
     INTERNAL_SERVER_ERROR("내부 서버 오류가 발생했습니다.");
 
     private final String Description;

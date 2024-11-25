@@ -157,8 +157,12 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                                                                 ((WebClientResponseException) throwable).getStatusCode().is5xxServerError()
                                                 )
                                                 .doBeforeRetry(retrySignal -> log.warn(
-                                                        "재시도 : {}회차, 에러 이: {}", retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())
+                                                        "재시도 : {}회차, 에러 메시지 : {}", retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())
                                                 )
+                                                .onRetryExhaustedThrow(((retryBackoffSpec, retrySignal) -> {
+                                                    log.error("최종 실패 : 모든 재시도가 실패했습니다. 에러 메시지 : {}", retrySignal.failure().getMessage());
+                                                    return new ApiEndPointException(ErrorCode.RETRY_EXHAUSTED);
+                                                }))
                                 )
 
                                 .onErrorResume(throwable -> {
