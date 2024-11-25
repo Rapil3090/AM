@@ -39,4 +39,12 @@ public class ApiEndpointController {
 
         return ResponseEntity.ok(apiEndpointService.createApi(request));
     }
+
+    @PostMapping("/setparameters")
+    public ResponseEntity<String> setServiceKey(
+            @Valid @RequestBody CreateApiEndpointDTO.Request request) {
+
+        return ResponseEntity.ok(apiEndpointService.setServiceKey(request));
+    }
+
 }
