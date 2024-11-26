@@ -4,6 +4,7 @@ import apiMonitering.domain.ApiResponse;
 import apiMonitering.dto.create.CreateApiEndpointDTO;
 import apiMonitering.domain.ApiEndpoint;
 import apiMonitering.exception.ApiEndPointException;
+import apiMonitering.handler.ApiResponseHandler;
 import apiMonitering.repository.ApiEndpointRepository;
 import apiMonitering.repository.ApiResponseRepository;
 import apiMonitering.type.ErrorCode;
@@ -146,7 +147,6 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                                     return apiResponseRepository.save(apiResponse);
                                 });
 
-
                     }
                     return Mono.error(new ApiEndPointException(ErrorCode.UNKNOWN_ERROR));
 
@@ -167,42 +167,9 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                                                 }))
                                 )
 
-                                .onErrorResume(WebClientResponseException.class, error -> {
-
-                                        Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
-                                        apiResponse.setStatusCode(error.getStatusCode().value());
-                                        apiResponse.setResponseTime(responseTime);
-                                        apiResponse.setErrorMessage(error.getMessage());
-                                        apiResponse.set_success(false);
-
-                                        if (error.getStatusCode().is4xxClientError()) {
-                                            log.error("4xx 클라이언트 에러 발생: 상태코드={}", error.getStatusCode());
-                                        } else if (error.getStatusCode().is5xxServerError()) {
-                                            log.error("5xx 서버 에러 발생: 상태코드={}", error.getStatusCode());
-                                        }
-
-                                    return Mono.just(apiResponseRepository.save(apiResponse));
-                                })
-
-                                .onErrorResume(TimeoutException.class, timeout -> {
-                                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
-                                    apiResponse.setStatusCode(408);
-                                    apiResponse.setResponseTime(responseTime);
-                                    apiResponse.setErrorMessage("타임아웃");
-                                    log.error("타임아웃 발생 : {}", timeout.getMessage());
-
-                                    return Mono.just(apiResponseRepository.save(apiResponse));
-                                })
-
-                                .onErrorResume(throwable -> {
-                                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
-                                    apiResponse.setStatusCode(500);
-                                    apiResponse.setResponseTime(responseTime);
-                                    apiResponse.set_success(false);
-                                    log.error("알 수 없는 에러 발생 : {}", throwable.getMessage());
-
-                                    return Mono.just(apiResponseRepository.save(apiResponse));
-                                });
+                .onErrorResume(throwable ->
+                        new ApiResponseHandler(apiResponseRepository).
+                                apiResponseErrorHandler(throwable, apiResponse, startTime));
                     }
 
 
