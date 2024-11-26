@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Service
@@ -84,6 +85,8 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
         Instant startTime = Instant.now();
 
+        Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+
         ApiResponse apiResponse = new ApiResponse();
         apiResponse.setApiEndpoint(apiEndpoint);
 
@@ -125,7 +128,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                             .forEach(param -> headers.add(param.getKey(), param.getValue()));
                 })
                 .exchangeToMono(response -> {
-                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+//                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
 
                     if (response.statusCode().is2xxSuccessful()) {
 
@@ -154,42 +157,51 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                                         Retry.backoff(3, Duration.ofSeconds(3))
                                                 .filter(throwable ->
                                                         throwable instanceof WebClientResponseException &&
-                                                                ((WebClientResponseException) throwable).getStatusCode().is5xxServerError()
-                                                )
+                                                                ((WebClientResponseException) throwable).getStatusCode().is5xxServerError())
                                                 .doBeforeRetry(retrySignal -> log.warn(
-                                                        "재시도 : {}회차, 에러 메시지 : {}", retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())
-                                                )
+                                                        "재시도 : {}회차, 에러 메시지 : {}", retrySignal.totalRetries() + 1, retrySignal.failure().getMessage()))
                                                 .onRetryExhaustedThrow(((retryBackoffSpec, retrySignal) -> {
                                                     log.error("최종 실패 : 모든 재시도가 실패했습니다. 에러 메시지 : {}", retrySignal.failure().getMessage());
+                                                    apiResponse.setErrorMessage("최종실패");
+
                                                     return new ApiEndPointException(ErrorCode.RETRY_EXHAUSTED);
                                                 }))
                                 )
 
-                                .onErrorResume(throwable -> {
-                                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
-
-                                    apiResponse.setResponseTime(responseTime);
-                                    apiResponse.set_success(false);
-
-                                    if (throwable instanceof WebClientResponseException error) {
+                                .onErrorResume(WebClientResponseException.class, error -> {
 
                                         apiResponse.setStatusCode(error.getStatusCode().value());
+                                        apiResponse.setResponseTime(responseTime);
+                                        apiResponse.setErrorMessage(error.getMessage());
+                                        apiResponse.set_success(false);
 
                                         if (error.getStatusCode().is4xxClientError()) {
                                             log.error("4xx 클라이언트 에러 발생: 상태코드={}", error.getStatusCode());
-                                            return Mono.just(apiResponseRepository.save(apiResponse));
                                         } else if (error.getStatusCode().is5xxServerError()) {
                                             log.error("5xx 서버 에러 발생: 상태코드={}", error.getStatusCode());
-                                            return Mono.just(apiResponseRepository.save(apiResponse));
                                         }
-                                    }
 
-                                    log.error("알 수 없는 에러 발생 : {}", throwable.getMessage());
+                                    return Mono.just(apiResponseRepository.save(apiResponse));
+                                })
+
+                                .onErrorResume(TimeoutException.class, timeout -> {
+                                    apiResponse.setStatusCode(408);
+                                    apiResponse.setResponseTime(responseTime);
+                                    apiResponse.setErrorMessage("타임아웃");
+                                    log.error("타임아웃 발생 : {}", timeout.getMessage());
+
+                                    return Mono.just(apiResponseRepository.save(apiResponse));
+                                })
+
+                                .onErrorResume(throwable -> {
+//                                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
                                     apiResponse.setStatusCode(500);
+                                    apiResponse.setResponseTime(responseTime);
+                                    apiResponse.set_success(false);
+                                    log.error("알 수 없는 에러 발생 : {}", throwable.getMessage());
 
                                     return Mono.just(apiResponseRepository.save(apiResponse));
                                 });
-
                     }
 
 
