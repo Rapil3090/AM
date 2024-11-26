@@ -85,7 +85,6 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
         Instant startTime = Instant.now();
 
-        Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
 
         ApiResponse apiResponse = new ApiResponse();
         apiResponse.setApiEndpoint(apiEndpoint);
@@ -128,7 +127,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                             .forEach(param -> headers.add(param.getKey(), param.getValue()));
                 })
                 .exchangeToMono(response -> {
-//                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
 
                     if (response.statusCode().is2xxSuccessful()) {
 
@@ -170,6 +169,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
 
                                 .onErrorResume(WebClientResponseException.class, error -> {
 
+                                        Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
                                         apiResponse.setStatusCode(error.getStatusCode().value());
                                         apiResponse.setResponseTime(responseTime);
                                         apiResponse.setErrorMessage(error.getMessage());
@@ -185,6 +185,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                                 })
 
                                 .onErrorResume(TimeoutException.class, timeout -> {
+                                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
                                     apiResponse.setStatusCode(408);
                                     apiResponse.setResponseTime(responseTime);
                                     apiResponse.setErrorMessage("타임아웃");
@@ -194,7 +195,7 @@ public class ApiEndpointServiceImpl implements ApiEndpointService {
                                 })
 
                                 .onErrorResume(throwable -> {
-//                                    long responseTime = Duration.between(startTime, Instant.now()).toMillis();
+                                    Long responseTime = Duration.between(startTime, Instant.now()).toMillis();
                                     apiResponse.setStatusCode(500);
                                     apiResponse.setResponseTime(responseTime);
                                     apiResponse.set_success(false);
